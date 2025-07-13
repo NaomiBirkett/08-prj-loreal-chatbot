@@ -56,44 +56,61 @@ chatForm.addEventListener("submit", async (e) => {
   // Show loading message as an assistant bubble
   chatWindow.innerHTML += `<p class="msg ai"><em>Thinking...</em></p>`;
 
-  // Send request to your Cloudflare Worker (no API key needed in JS)
-  const response = await fetch(
-    "https://loreal-worker.tankadin1988.workers.dev/",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o", // Use gpt-4o for best results
-        messages: messages,
-        temperature: 0.7,
-      }),
+  try {
+    // Send request to your Cloudflare Worker (no API key needed in JS)
+    const response = await fetch(
+      "https://loreal-worker.tankadin1988.workers.dev/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o", // Use gpt-4o for best results
+          messages: messages,
+          temperature: 0.7,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      // If the response is not OK, throw an error
+      throw new Error(`API error: ${response.status}`);
     }
-  );
 
-  const data = await response.json();
-  const reply = data.choices[0].message.content;
+    const data = await response.json();
+    const reply = data.choices[0].message.content;
 
-  // Check if the AI learned the user's name from the reply
-  // (Simple check: look for "Nice to meet you" and extract name from last user message)
-  if (!userName && /my name is (\w+)/i.test(question)) {
-    userName = question.match(/my name is (\w+)/i)[1];
+    // Check if the AI learned the user's name from the reply
+    // (Simple check: look for "Nice to meet you" and extract name from last user message)
+    if (!userName && /my name is (\w+)/i.test(question)) {
+      userName = question.match(/my name is (\w+)/i)[1];
+    }
+
+    // Add assistant's reply to conversation history
+    messages.push({
+      role: "assistant",
+      content: reply,
+    });
+
+    // Convert line breaks to <br> for better readability in chat
+    const formattedReply = reply.replace(/\n/g, "<br>");
+
+    // Replace chat window with user and assistant bubbles
+    chatWindow.innerHTML = `
+      <p class="msg user"><strong>You:</strong> ${question}</p>
+      <div style="height:16px"></div>
+      <p class="msg ai"><strong>Bot:</strong> ${formattedReply}</p>
+    `;
+  } catch (error) {
+    // Log the error for debugging
+    console.error("API request failed:", error);
+
+    // Show a friendly error message to the user
+    chatWindow.innerHTML = `
+      <p class="msg user"><strong>You:</strong> ${question}</p>
+      <div style="height:16px"></div>
+      <p class="msg ai"><strong>Bot:</strong> Sorry, something went wrong. Please try again in a moment.</p>
+    `;
   }
-
-  // Add assistant's reply to conversation history
-  messages.push({
-    role: "assistant",
-    content: reply,
-  });
-
-  // Convert line breaks to <br> for better readability in chat
-  const formattedReply = reply.replace(/\n/g, "<br>");
-
-  // Replace chat window with user and assistant bubbles
-  chatWindow.innerHTML = `
-    <p class="msg user"><strong>You:</strong> ${question}</p>
-    <div style="height:16px"></div>
-    <p class="msg ai"><strong>Bot:</strong> ${formattedReply}</p>
-  `;
 });
