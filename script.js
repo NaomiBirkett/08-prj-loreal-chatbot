@@ -16,8 +16,8 @@ const messages = [
 // Variable to store the user's name if they provide it
 let userName = "";
 
-// Show initial welcome message
-chatWindow.innerHTML = `<p><strong>Bot:</strong> 👋 Hello! I'm your L'Oréal beauty assistant. Ask me anything about haircare, skincare, or makeup!</p>`;
+// Show initial welcome message as an assistant bubble
+chatWindow.innerHTML = `<p class="msg ai"><strong>Bot:</strong> 👋 Hello! I'm your L'Oréal beauty assistant. Ask me anything about haircare, skincare, or makeup!</p>`;
 
 // Track if it's the first user question
 let isFirstQuestion = true;
@@ -44,14 +44,17 @@ chatForm.addEventListener("submit", async (e) => {
     chatWindow.innerHTML = "";
   }
 
-  // Show user's message
-  chatWindow.innerHTML += `<p><strong>You:</strong> ${question}</p>`;
+  // Clear chat window for new exchange
+  chatWindow.innerHTML = "";
+
+  // Show user's message as a bubble
+  chatWindow.innerHTML += `<p class="msg user"><strong>You:</strong> ${question}</p>`;
 
   // Clear input immediately after submit
   userInput.value = "";
 
-  // Show loading message
-  chatWindow.innerHTML += `<p><em>Thinking...</em></p>`;
+  // Show loading message as an assistant bubble
+  chatWindow.innerHTML += `<p class="msg ai"><em>Thinking...</em></p>`;
 
   // Send request to your Cloudflare Worker (no API key needed in JS)
   const response = await fetch(
@@ -87,6 +90,10 @@ chatForm.addEventListener("submit", async (e) => {
   // Convert line breaks to <br> for better readability in chat
   const formattedReply = reply.replace(/\n/g, "<br>");
 
-  // Replace loading message with assistant's reply
-  chatWindow.innerHTML = `<p><strong>You:</strong> ${question}</p><div style="height:16px"></div><p><strong>Bot:</strong> ${formattedReply}</p>`;
+  // Replace chat window with user and assistant bubbles
+  chatWindow.innerHTML = `
+    <p class="msg user"><strong>You:</strong> ${question}</p>
+    <div style="height:16px"></div>
+    <p class="msg ai"><strong>Bot:</strong> ${formattedReply}</p>
+  `;
 });
