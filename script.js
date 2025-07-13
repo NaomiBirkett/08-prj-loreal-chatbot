@@ -17,8 +17,10 @@ const messages = [
 let userName = "";
 
 // Show initial welcome message
-chatWindow.textContent =
-  "👋 Hello! I'm your L'Oréal beauty assistant. Ask me anything about haircare, skincare, or makeup!";
+chatWindow.innerHTML = `<p><strong>Bot:</strong> 👋 Hello! I'm your L'Oréal beauty assistant. Ask me anything about haircare, skincare, or makeup!</p>`;
+
+// Track if it's the first user question
+let isFirstQuestion = true;
 
 // Handle form submit
 chatForm.addEventListener("submit", async (e) => {
@@ -33,6 +35,15 @@ chatForm.addEventListener("submit", async (e) => {
     content: question,
   });
 
+  // If it's the first question, clear the welcome message
+  if (isFirstQuestion) {
+    chatWindow.innerHTML = "";
+    isFirstQuestion = false;
+  } else {
+    // Otherwise, clear previous messages and show only the latest user question
+    chatWindow.innerHTML = "";
+  }
+
   // Show user's message
   chatWindow.innerHTML += `<p><strong>You:</strong> ${question}</p>`;
 
@@ -42,19 +53,21 @@ chatForm.addEventListener("submit", async (e) => {
   // Show loading message
   chatWindow.innerHTML += `<p><em>Thinking...</em></p>`;
 
-  // Send request to OpenAI, including all previous messages for context
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`, // Defined in secrets.js
-    },
-    body: JSON.stringify({
-      model: "gpt-4o", // Use gpt-4o for best results
-      messages: messages,
-      temperature: 0.7,
-    }),
-  });
+  // Send request to your Cloudflare Worker (no API key needed in JS)
+  const response = await fetch(
+    "https://loreal-worker.tankadin1988.workers.dev/",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o", // Use gpt-4o for best results
+        messages: messages,
+        temperature: 0.7,
+      }),
+    }
+  );
 
   const data = await response.json();
   const reply = data.choices[0].message.content;
@@ -74,9 +87,6 @@ chatForm.addEventListener("submit", async (e) => {
   // Convert line breaks to <br> for better readability in chat
   const formattedReply = reply.replace(/\n/g, "<br>");
 
-  // Add a space between user and AI messages
-  chatWindow.innerHTML += `<div style="height:16px"></div>`;
-
-  // Show assistant's reply
-  chatWindow.innerHTML += `<p><strong>Bot:</strong> ${formattedReply}</p>`;
+  // Replace loading message with assistant's reply
+  chatWindow.innerHTML = `<p><strong>You:</strong> ${question}</p><div style="height:16px"></div><p><strong>Bot:</strong> ${formattedReply}</p>`;
 });
